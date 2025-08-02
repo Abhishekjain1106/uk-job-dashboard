@@ -24,26 +24,44 @@ def fetch_all_jobs():
 
 # --- The App UI ---
 st.title("🇬🇧 UK Job Engine Dashboard")
-st.write("This dashboard displays all jobs collected by the automated backend.")
+st.write("This dashboard displays all jobs collected by the automated backend, now with AI analysis!")
 
 # Fetch the data
 jobs_df = fetch_all_jobs()
 
-# --- NEW: Add a search filter ---
-st.header("🔍 Filter Jobs")
-search_term = st.text_input("Search by job title, company, or keyword:")
+# --- NEW: Create filter controls in the sidebar ---
+st.sidebar.header("📊 Filters")
 
-# --- NEW: Logic to apply the filter ---
+# Text search filter
+search_term = st.sidebar.text_input("Search by job title:")
+
+# Category filter
+# Get a unique list of all categories from our data, and add an 'All' option
+all_categories = jobs_df['job_category'].unique()
+# Prepend the 'All' option to the list of categories
+category_options = ['All'] + list(all_categories)
+selected_category = st.sidebar.selectbox("Filter by Job Category:", options=category_options)
+
+# --- Apply filters ---
+# Start with the full dataframe
+filtered_df = jobs_df
+
+# Apply text search if a term is entered
 if search_term:
-    # We filter the DataFrame to only include rows where the 'title' column
-    # contains the search term. `case=False` makes it case-insensitive.
-    filtered_df = jobs_df[jobs_df['title'].str.contains(search_term, case=False, na=False)]
-else:
-    # If the search box is empty, show the full dataframe
-    filtered_df = jobs_df
+    filtered_df = filtered_df[filtered_df['title'].str.contains(search_term, case=False, na=False)]
+
+# Apply category filter if a specific category is chosen
+if selected_category != 'All':
+    filtered_df = filtered_df[filtered_df['job_category'] == selected_category]
 
 st.success(f"Displaying {len(filtered_df)} of {len(jobs_df)} jobs.")
 
-# --- MODIFIED: Display the FILTERED Data Table ---
-# We now display the filtered_df instead of the original jobs_df
-st.dataframe(filtered_df)
+# --- Display the Data Table with selected columns ---
+# We choose which columns to show to keep the table clean
+st.dataframe(filtered_df[[
+    'title',
+    'job_category',
+    'key_skills',
+    'link',
+    'source'
+]])
